@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "personal-assistant": {
+      "command": "node",
+      "args": ["c:\\Users\\omiir\\OneDrive\\Desktop\\MCP SERVER\\build\\index.js"],
+      "env": {
+        "DATA_DIR": "${USERPROFILE}\\.personal-mcp"
+      }
+    }
+  }
+}

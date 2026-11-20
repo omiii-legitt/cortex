@@ -1,0 +1,5 @@
+{
+  "version": 2,
+  "builds": [{ "src": "src/api/mcp.ts", "use": "@vercel/node" }],
+  "routes": [{ "src": "/api/mcp", "dest": "/src/api/mcp.ts" }]
+}
