@@ -66,6 +66,34 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       color: #e6edf3;
     }
     footer { text-align: center; color: #484f58; font-size: 0.82rem; margin-top: 24px; }
+    /* Chatbot */
+    .chat-section { margin-bottom: 40px; }
+    .chat-note { color: #484f58; font-size: 0.78rem; margin-top: 8px; }
+    .chat-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      height: 300px;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .msg { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 0.88rem; line-height: 1.5; word-break: break-word; }
+    .msg-user { background: #1f6feb; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .msg-bot { background: #21262d; color: #e6edf3; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .msg-thinking { color: #8b949e; font-style: italic; align-self: flex-start; font-size: 0.82rem; }
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-input {
+      flex: 1; background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+      color: #e6edf3; padding: 10px 14px; font-size: 0.9rem; outline: none;
+    }
+    .chat-input:focus { border-color: #58a6ff; }
+    .chat-send { background: #238636; color: #fff; border: 1px solid #2ea043; border-radius: 8px; padding: 10px 20px; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
+    .chat-send:hover { opacity: 0.85; }
+    .chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -107,8 +135,71 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 }</pre>
     </section>
 
+    <section class="chat-section">
+      <h2>Try it live</h2>
+      <div class="chat-box" id="chatBox"></div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chatInput" type="text" placeholder="Ask me anything — create a note, list tasks..." />
+        <button class="chat-send" id="chatSend">Send</button>
+      </div>
+      <p class="chat-note">Powered by Gemini &middot; Your data is stored in your personal database</p>
+    </section>
+
     <footer>Built with TypeScript &middot; MCP SDK &middot; Vercel &middot; Turso</footer>
   </div>
+
+    <script>
+      (function () {
+        var history = [];
+        var box = document.getElementById('chatBox');
+        var input = document.getElementById('chatInput');
+        var btn = document.getElementById('chatSend');
+
+        function appendMsg(text, type) {
+          var div = document.createElement('div');
+          div.className = 'msg msg-' + type;
+          div.textContent = text;
+          box.appendChild(div);
+          box.scrollTop = box.scrollHeight;
+          return div;
+        }
+
+        async function send() {
+          var msg = input.value.trim();
+          if (!msg) return;
+          input.value = '';
+          btn.disabled = true;
+          appendMsg(msg, 'user');
+          var thinking = appendMsg('Thinking...', 'thinking');
+          try {
+            var res = await fetch('/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: msg, history: history })
+            });
+            var data = await res.json();
+            box.removeChild(thinking);
+            if (data.error) {
+              appendMsg('Something went wrong, try again.', 'bot');
+            } else {
+              appendMsg(data.reply, 'bot');
+              history.push({ role: 'user', parts: [{ text: msg }] });
+              history.push({ role: 'model', parts: [{ text: data.reply }] });
+            }
+          } catch (e) {
+            box.removeChild(thinking);
+            appendMsg('Something went wrong, try again.', 'bot');
+          }
+          btn.disabled = false;
+          input.focus();
+        }
+
+        btn.addEventListener('click', send);
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') send();
+        });
+      })();
+    </script>
 </body>
 </html>`;
 

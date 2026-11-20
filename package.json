@@ -9,6 +9,7 @@
     "vercel-build": "tsc"
   },
   "dependencies": {
+    "@google/genai": "^3.6.1",
     "@libsql/client": "^0.14.0",
     "@modelcontextprotocol/server": "^2.4.0",
     "zod": "^4.0.0"
