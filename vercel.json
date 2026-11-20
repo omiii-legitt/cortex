@@ -1,9 +1,9 @@
 {
   "version": 2,
   "builds": [
-    { "src": "src/api/mcp.ts", "use": "@vercel/node" },
+    { "src": "src/api/mcp.ts", "use": "@vercel/node", "config": { "maxDuration": 60 } },
     { "src": "src/api/index.ts", "use": "@vercel/node" },
-    { "src": "src/api/chat.ts", "use": "@vercel/node" }
+    { "src": "src/api/chat.ts", "use": "@vercel/node", "config": { "maxDuration": 60 } }
   ],
   "routes": [
     { "src": "/api/mcp", "dest": "/src/api/mcp.ts" },

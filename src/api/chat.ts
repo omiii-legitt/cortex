@@ -70,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!message) return res.status(400).json({ error: 'message is required' });
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { timeout: 55000 } });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const interactions = (ai as any).interactions;
 
