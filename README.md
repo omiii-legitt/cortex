@@ -2,7 +2,7 @@
 
 A personal MCP (Model Context Protocol) server that exposes tools for notes, tasks, and personal context. AI clients connect to this server and use the tools to interact with your data. This server does not host an AI or provide a chat interface — it is a tool provider.
 
-**Live deployment:** `https://your-project.vercel.app/api/mcp`
+**Live deployment:** `https://personal-mcp-server-taupe.vercel.app/api/mcp`
 
 ## What it does
 
@@ -22,7 +22,7 @@ Add this to your MCP client configuration:
 {
   "mcpServers": {
     "personal-assistant": {
-      "url": "https://your-project.vercel.app/api/mcp"
+      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
     }
   }
 }
