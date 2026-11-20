@@ -13,7 +13,7 @@ import {
   setContext,
 } from '../db.js';
 
-const MODEL = 'gemini-2.0-flash-lite';
+const MODEL = 'gemini-3.5-flash-lite';
 
 const SYSTEM_INSTRUCTION =
   "You are a personal assistant with access to the user's notes, tasks, and personal context. Use the available tools to help them. Always confirm what you did after calling a tool.";
