@@ -5,3 +5,5 @@ build/
 *.db-shm
 *.db-wal
 .vercel/
+
+.vercel
