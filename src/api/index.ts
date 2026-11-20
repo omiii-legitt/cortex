@@ -150,7 +150,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     <script>
       (function () {
-        var history = [];
+        var prevId = null;
         var box = document.getElementById('chatBox');
         var input = document.getElementById('chatInput');
         var btn = document.getElementById('chatSend');
@@ -172,19 +172,19 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
           appendMsg(msg, 'user');
           var thinking = appendMsg('Thinking...', 'thinking');
           try {
+            var body = { message: msg, previousInteractionId: prevId };
             var res = await fetch('/api/chat', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: msg, history: history })
+              body: JSON.stringify(body)
             });
             var data = await res.json();
             box.removeChild(thinking);
             if (data.error) {
-              appendMsg('Something went wrong, try again.', 'bot');
+              appendMsg('Error: ' + data.error, 'bot');
             } else {
               appendMsg(data.reply, 'bot');
-              history.push({ role: 'user', parts: [{ text: msg }] });
-              history.push({ role: 'model', parts: [{ text: data.reply }] });
+              prevId = data.interactionId;
             }
           } catch (e) {
             box.removeChild(thinking);
