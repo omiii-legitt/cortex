@@ -254,7 +254,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     <section class="section">
       <h2 class="section-heading">What it does</h2>
-      <p class="section-text">This is an MCP (Model Context Protocol) server &#8212; a tool provider for AI clients like Kiro. It is not a chat app or an AI host. AI clients connect to it and call its tools to manage your notes, tasks, and personal context. The chat below is just a demo that uses the same underlying tools via a Gemini-powered proxy.</p>
+      <p class="section-text">This is an MCP (Model Context Protocol) server &#8212; a tool provider for AI clients. It is not a chat app or an AI host. AI clients connect to it and call its tools to manage your notes, tasks, and personal context. The chat below is just a demo that uses the same underlying tools via a Gemini-powered proxy.</p>
       <ul class="feature-list">
         <li>&#128221; <strong>Notes</strong> &#8212; Create, retrieve, update, and search notes</li>
         <li>&#9989; <strong>Tasks</strong> &#8212; Create, list, and update tasks</li>
