@@ -249,6 +249,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         <a href="#chat" class="btn btn-outline">Try the chat &#8595;</a>
         <a href="https://github.com/omiii-legitt/personal-mcp-server" target="_blank" rel="noopener" class="btn btn-outline">GitHub &#8599;</a>
         <button class="btn btn-outline" id="copyConfig">Copy MCP config</button>
+        <a href="/api/auth/login" class="btn btn-outline">&#11043; Sign in with GitHub</a>
       </div>
     </header>
 
@@ -314,16 +315,80 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     </section>
 
     <section class="section">
-      <h2 class="section-heading">Connect to Kiro</h2>
-      <p class="section-text">Add this to your Kiro MCP configuration file, then restart Kiro. The server exposes 9 tools your AI client can call directly.</p>
-      <pre class="code-block">{
+      <h2 class="section-heading">Connect</h2>
+      <p class="section-text">Add the config below to your AI client, then restart it. All clients use the same JSON — just place the file in the right location.</p>
+
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <div class="code-block">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div>
+              <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Kiro</span>
+              <span style="color:#a0a0a0;font-size:0.78rem;margin-left:12px">~/.kiro/settings/mcp.json</span>
+            </div>
+            <button class="btn btn-outline" style="font-size:0.75rem;padding:4px 12px" data-copy-btn>Copy</button>
+          </div>
+          <pre style="margin:0;white-space:pre">{
   "mcpServers": {
     "personal-assistant": {
       "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
     }
   }
 }</pre>
-      <button class="btn btn-outline" id="copyConfigBottom" style="margin-top:12px">Copy config</button>
+        </div>
+
+        <div class="code-block">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div>
+              <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Claude Desktop</span>
+              <span style="color:#a0a0a0;font-size:0.78rem;margin-left:12px">~/Library/Application Support/Claude/claude_desktop_config.json &middot; %APPDATA%\Claude\claude_desktop_config.json</span>
+            </div>
+            <button class="btn btn-outline" style="font-size:0.75rem;padding:4px 12px" data-copy-btn>Copy</button>
+          </div>
+          <pre style="margin:0;white-space:pre">{
+  "mcpServers": {
+    "personal-assistant": {
+      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
+    }
+  }
+}</pre>
+        </div>
+
+        <div class="code-block">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div>
+              <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Cursor</span>
+              <span style="color:#a0a0a0;font-size:0.78rem;margin-left:12px">.cursor/mcp.json (project root)</span>
+            </div>
+            <button class="btn btn-outline" style="font-size:0.75rem;padding:4px 12px" data-copy-btn>Copy</button>
+          </div>
+          <pre style="margin:0;white-space:pre">{
+  "mcpServers": {
+    "personal-assistant": {
+      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
+    }
+  }
+}</pre>
+        </div>
+
+        <div class="code-block">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div>
+              <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Windsurf</span>
+              <span style="color:#a0a0a0;font-size:0.78rem;margin-left:12px">~/.codeium/windsurf/mcp_config.json</span>
+            </div>
+            <button class="btn btn-outline" style="font-size:0.75rem;padding:4px 12px" data-copy-btn>Copy</button>
+          </div>
+          <pre style="margin:0;white-space:pre">{
+  "mcpServers": {
+    "personal-assistant": {
+      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
+    }
+  }
+}</pre>
+        </div>
+
+      </div>
     </section>
 
     <section class="section" id="chat">
@@ -364,9 +429,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
       var MCP_CONFIG = '{\\n  "mcpServers": {\\n    "personal-assistant": {\\n      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"\\n    }\\n  }\\n}';
 
-      function setupCopyBtn(id, originalLabel) {
-        var el = document.getElementById(id);
-        if (!el) return;
+      function setupCopyBtn(el, originalLabel) {
         el.addEventListener('click', function () {
           navigator.clipboard.writeText(MCP_CONFIG).then(function () {
             el.textContent = '\\u2713 Copied!';
@@ -379,8 +442,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      setupCopyBtn('copyConfig', 'Copy MCP config');
-      setupCopyBtn('copyConfigBottom', 'Copy config');
+      // Hero copy button
+      var heroBtn = document.getElementById('copyConfig');
+      if (heroBtn) setupCopyBtn(heroBtn, 'Copy MCP config');
+
+      // All section copy buttons
+      document.querySelectorAll('[data-copy-btn]').forEach(function (btn) {
+        setupCopyBtn(btn, 'Copy');
+      });
 
       function appendMsg(text, type) {
         var div = document.createElement('div');

@@ -1,7 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI } from '@google/genai';
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { GoogleGenAI } from "@google/genai";
 // NOTE: rate limit state is in-memory and resets on each Vercel cold start.
-import { checkRateLimit } from '../rate-limit.js';
+import { checkRateLimit } from "../rate-limit.js";
 import {
   initDb,
   createNote,
@@ -13,80 +13,90 @@ import {
   updateTask,
   getAllContext,
   setContext,
-} from '../db.js';
+} from "../db.js";
+import { getUserFromRequest } from "../auth.js";
 
-const MODEL = 'gemini-3.5-flash-lite';
+const MODEL = "gemini-3.5-flash-lite";
 
 const SYSTEM_INSTRUCTION =
   "You are a personal assistant with access to the user's notes, tasks, and personal context. Use the available tools to help them. Always confirm what you did after calling a tool.";
 
 // Interactions API: each tool is a flat object with type:"function"
 const TOOLS = [
-  { type: 'function', name: 'create_note', description: 'Create a new note with a title, content, and optional tags', parameters: { type: 'object', properties: { title: { type: 'string' }, content: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } } }, required: ['title', 'content'] } },
-  { type: 'function', name: 'get_note', description: 'Retrieve a note by its ID', parameters: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] } },
-  { type: 'function', name: 'update_note', description: 'Update a note by ID', parameters: { type: 'object', properties: { id: { type: 'string' }, title: { type: 'string' }, content: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } } }, required: ['id'] } },
-  { type: 'function', name: 'search_notes', description: 'Search notes by title and content', parameters: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number' } }, required: ['query'] } },
-  { type: 'function', name: 'create_task', description: 'Create a new task', parameters: { type: 'object', properties: { title: { type: 'string' }, details: { type: 'string' }, due_date: { type: 'string' } }, required: ['title'] } },
-  { type: 'function', name: 'list_tasks', description: 'List tasks optionally filtered by status', parameters: { type: 'object', properties: { status: { type: 'string', enum: ['open', 'in_progress', 'done'] }, limit: { type: 'number' } } } },
-  { type: 'function', name: 'update_task', description: 'Update a task by ID', parameters: { type: 'object', properties: { id: { type: 'string' }, title: { type: 'string' }, details: { type: 'string' }, due_date: { type: 'string' }, status: { type: 'string', enum: ['open', 'in_progress', 'done'] } }, required: ['id'] } },
-  { type: 'function', name: 'get_my_context', description: 'Get all personal context key/value pairs', parameters: { type: 'object', properties: {} } },
-  { type: 'function', name: 'set_context', description: 'Set a personal context key/value pair', parameters: { type: 'object', properties: { key: { type: 'string' }, value: { type: 'string' } }, required: ['key', 'value'] } },
+  { type: "function", name: "create_note", description: "Create a new note with a title, content, and optional tags", parameters: { type: "object", properties: { title: { type: "string" }, content: { type: "string" }, tags: { type: "array", items: { type: "string" } } }, required: ["title", "content"] } },
+  { type: "function", name: "get_note", description: "Retrieve a note by its ID", parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } },
+  { type: "function", name: "update_note", description: "Update a note by ID", parameters: { type: "object", properties: { id: { type: "string" }, title: { type: "string" }, content: { type: "string" }, tags: { type: "array", items: { type: "string" } } }, required: ["id"] } },
+  { type: "function", name: "search_notes", description: "Search notes by title and content", parameters: { type: "object", properties: { query: { type: "string" }, limit: { type: "number" } }, required: ["query"] } },
+  { type: "function", name: "create_task", description: "Create a new task", parameters: { type: "object", properties: { title: { type: "string" }, details: { type: "string" }, due_date: { type: "string" } }, required: ["title"] } },
+  { type: "function", name: "list_tasks", description: "List tasks optionally filtered by status", parameters: { type: "object", properties: { status: { type: "string", enum: ["open", "in_progress", "done"] }, limit: { type: "number" } } } },
+  { type: "function", name: "update_task", description: "Update a task by ID", parameters: { type: "object", properties: { id: { type: "string" }, title: { type: "string" }, details: { type: "string" }, due_date: { type: "string" }, status: { type: "string", enum: ["open", "in_progress", "done"] } }, required: ["id"] } },
+  { type: "function", name: "get_my_context", description: "Get all personal context key/value pairs", parameters: { type: "object", properties: {} } },
+  { type: "function", name: "set_context", description: "Set a personal context key/value pair", parameters: { type: "object", properties: { key: { type: "string" }, value: { type: "string" } }, required: ["key", "value"] } },
 ];
 
-async function executeTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+async function executeTool(
+  name: string,
+  args: Record<string, unknown>,
+  userId: string
+): Promise<unknown> {
   await initDb();
   switch (name) {
-    case 'create_note':
-      return createNote(args.title as string, args.content as string, (args.tags as string[] | undefined) ?? []);
-    case 'get_note':
-      return getNote(args.id as string);
-    case 'update_note':
-      return updateNote(args.id as string, { title: args.title as string | undefined, content: args.content as string | undefined, tags: args.tags as string[] | undefined });
-    case 'search_notes':
-      return searchNotes(args.query as string, (args.limit as number | undefined) ?? 10);
-    case 'create_task':
-      return createTask(args.title as string, args.details as string | undefined, args.due_date as string | undefined);
-    case 'list_tasks':
-      return listTasks(args.status as string | undefined, args.limit as number | undefined);
-    case 'update_task':
-      return updateTask(args.id as string, { title: args.title as string | undefined, details: args.details as string | undefined, due_date: args.due_date as string | undefined, status: args.status as string | undefined });
-    case 'get_my_context':
-      return getAllContext();
-    case 'set_context':
-      return setContext(args.key as string, args.value as string);
+    case "create_note":
+      return createNote(userId, args.title as string, args.content as string, (args.tags as string[] | undefined) ?? []);
+    case "get_note":
+      return getNote(userId, args.id as string);
+    case "update_note":
+      return updateNote(userId, args.id as string, { title: args.title as string | undefined, content: args.content as string | undefined, tags: args.tags as string[] | undefined });
+    case "search_notes":
+      return searchNotes(userId, args.query as string, (args.limit as number | undefined) ?? 10);
+    case "create_task":
+      return createTask(userId, args.title as string, args.details as string | undefined, args.due_date as string | undefined);
+    case "list_tasks":
+      return listTasks(userId, args.status as string | undefined, args.limit as number | undefined);
+    case "update_task":
+      return updateTask(userId, args.id as string, { title: args.title as string | undefined, details: args.details as string | undefined, due_date: args.due_date as string | undefined, status: args.status as string | undefined });
+    case "get_my_context":
+      return getAllContext(userId);
+    case "set_context":
+      return setContext(userId, args.key as string, args.value as string);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
 
-  const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ?? 'unknown';
+  const ip =
+    (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() ?? "unknown";
   if (!checkRateLimit(ip, 20, 60_000)) {
-    return res.status(429).json({ error: 'Too many requests. Please wait a minute.' });
+    return res.status(429).json({ error: "Too many requests. Please wait a minute." });
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    console.error('[chat] GEMINI_API_KEY is not set');
-    return res.status(503).json({ error: 'Chat service is not configured' });
+    console.error("[chat] GEMINI_API_KEY is not set");
+    return res.status(503).json({ error: "Chat service is not configured" });
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
+    const user = await getUserFromRequest(req);
+    const userId = user?.id ?? "system";
+
     const { message, previousInteractionId } = req.body as {
       message: string;
       previousInteractionId?: string;
     };
 
-    if (!message) return res.status(400).json({ error: 'message is required' });
+    if (!message) return res.status(400).json({ error: "message is required" });
 
-    if (typeof message !== 'string' || message.length > 2000) return res.status(400).json({ error: 'message must be a string of at most 2000 characters' });
+    if (typeof message !== "string" || message.length > 2000)
+      return res.status(400).json({ error: "message must be a string of at most 2000 characters" });
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { timeout: 55000 } });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,19 +115,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Function call loop — keep going until no more function_call steps
     while (true) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fcSteps = (interaction.steps ?? []).filter((s: any) => s.type === 'function_call');
+      const fcSteps = (interaction.steps ?? []).filter((s: any) => s.type === "function_call");
       if (fcSteps.length === 0) break;
 
       // Execute all function calls and build function_result inputs
       const functionResults = await Promise.all(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fcSteps.map(async (step: any) => {
-          const result = await executeTool(step.name, step.arguments ?? {});
+          const result = await executeTool(step.name, step.arguments ?? {}, userId);
           return {
-            type: 'function_result',
+            type: "function_result",
             name: step.name,
             call_id: step.id,
-            result: [{ type: 'text', text: JSON.stringify(result) }],
+            result: [{ type: "text", text: JSON.stringify(result) }],
           };
         })
       );
@@ -132,10 +142,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const reply = interaction.output_text ?? interaction.outputText ?? 'Done.';
+    const reply = interaction.output_text ?? interaction.outputText ?? "Done.";
     return res.status(200).json({ reply, interactionId: interaction.id });
   } catch (err) {
-    console.error('[chat]', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("[chat]", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

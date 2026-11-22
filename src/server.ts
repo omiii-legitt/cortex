@@ -14,6 +14,8 @@ import {
 } from "./tools/tasks.js";
 import { handleGetMyContext, handleSetContext } from "./tools/context.js";
 
+// MCP is machine-to-machine. Per-user MCP auth requires per-user bearer tokens (future enhancement). For now all MCP calls use the 'system' account.
+
 function text(value: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
 }
@@ -27,7 +29,7 @@ async function wrap<T>(fn: () => Promise<T>) {
   }
 }
 
-export async function createServer(): Promise<McpServer> {
+export async function createServer(userId: string = "system"): Promise<McpServer> {
   await initDb();
   const server = new McpServer(
     { name: "personal-assistant", version: "1.0.0" },
@@ -44,7 +46,7 @@ export async function createServer(): Promise<McpServer> {
         tags: z.array(z.string().max(100)).max(20).optional(),
       },
     },
-    (args) => wrap(() => handleCreateNote(args))
+    (args) => wrap(() => handleCreateNote(userId, args))
   );
 
   server.registerTool(
@@ -53,7 +55,7 @@ export async function createServer(): Promise<McpServer> {
       description: "Retrieve a note by its ID",
       inputSchema: { id: z.string().uuid() },
     },
-    (args) => wrap(() => handleGetNote(args))
+    (args) => wrap(() => handleGetNote(userId, args))
   );
 
   server.registerTool(
@@ -67,7 +69,7 @@ export async function createServer(): Promise<McpServer> {
         tags: z.array(z.string().max(100)).max(20).optional(),
       },
     },
-    (args) => wrap(() => handleUpdateNote(args))
+    (args) => wrap(() => handleUpdateNote(userId, args))
   );
 
   server.registerTool(
@@ -79,7 +81,7 @@ export async function createServer(): Promise<McpServer> {
         limit: z.number().int().min(1).max(100).optional().default(10),
       },
     },
-    (args) => wrap(() => handleSearchNotes(args))
+    (args) => wrap(() => handleSearchNotes(userId, args))
   );
 
   server.registerTool(
@@ -92,7 +94,7 @@ export async function createServer(): Promise<McpServer> {
         due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
       },
     },
-    (args) => wrap(() => handleCreateTask(args))
+    (args) => wrap(() => handleCreateTask(userId, args))
   );
 
   server.registerTool(
@@ -104,7 +106,7 @@ export async function createServer(): Promise<McpServer> {
         limit: z.number().int().min(1).max(100).optional().default(20),
       },
     },
-    (args) => wrap(() => handleListTasks(args))
+    (args) => wrap(() => handleListTasks(userId, args))
   );
 
   server.registerTool(
@@ -119,7 +121,7 @@ export async function createServer(): Promise<McpServer> {
         status: z.enum(["open", "in_progress", "done"]).optional(),
       },
     },
-    (args) => wrap(() => handleUpdateTask(args))
+    (args) => wrap(() => handleUpdateTask(userId, args))
   );
 
   server.registerTool(
@@ -128,7 +130,7 @@ export async function createServer(): Promise<McpServer> {
       description: "Retrieve all configured personal context key/value pairs",
       inputSchema: {},
     },
-    () => wrap(() => handleGetMyContext())
+    () => wrap(() => handleGetMyContext(userId))
   );
 
   server.registerTool(
@@ -140,7 +142,7 @@ export async function createServer(): Promise<McpServer> {
         value: z.string().max(10000),
       },
     },
-    (args) => wrap(() => handleSetContext(args))
+    (args) => wrap(() => handleSetContext(userId, args))
   );
 
   console.error("[personal-assistant] MCP server ready");

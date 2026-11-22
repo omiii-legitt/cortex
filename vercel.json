@@ -3,11 +3,23 @@
   "builds": [
     { "src": "src/api/mcp.ts", "use": "@vercel/node", "config": { "maxDuration": 60 } },
     { "src": "src/api/index.ts", "use": "@vercel/node" },
-    { "src": "src/api/chat.ts", "use": "@vercel/node", "config": { "maxDuration": 60 } }
+    { "src": "src/api/chat.ts", "use": "@vercel/node", "config": { "maxDuration": 60 } },
+    { "src": "src/api/auth/login.ts", "use": "@vercel/node" },
+    { "src": "src/api/auth/callback.ts", "use": "@vercel/node" },
+    { "src": "src/api/auth/logout.ts", "use": "@vercel/node" },
+    { "src": "src/api/auth/me.ts", "use": "@vercel/node" },
+    { "src": "src/api/dashboard.ts", "use": "@vercel/node" },
+    { "src": "src/api/dashboard/data.ts", "use": "@vercel/node" }
   ],
   "routes": [
     { "src": "/api/mcp", "dest": "/src/api/mcp.ts" },
     { "src": "/api/chat", "dest": "/src/api/chat.ts" },
+    { "src": "/api/auth/login", "dest": "/src/api/auth/login.ts" },
+    { "src": "/api/auth/callback", "dest": "/src/api/auth/callback.ts" },
+    { "src": "/api/auth/logout", "dest": "/src/api/auth/logout.ts" },
+    { "src": "/api/auth/me", "dest": "/src/api/auth/me.ts" },
+    { "src": "/dashboard", "dest": "/src/api/dashboard.ts" },
+    { "src": "/api/dashboard/data", "dest": "/src/api/dashboard/data.ts" },
     { "src": "/", "dest": "/src/api/index.ts" },
     { "src": "/(.*)", "dest": "/src/api/index.ts", "status": 404 }
   ]
