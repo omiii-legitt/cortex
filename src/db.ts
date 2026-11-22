@@ -6,6 +6,9 @@ const authToken = process.env.TURSO_AUTH_TOKEN;
 const client = createClient(authToken ? { url, authToken } : { url });
 
 export async function initDb() {
+  if (!process.env.TURSO_DATABASE_URL) {
+    console.warn('[db] TURSO_DATABASE_URL is not set — using local SQLite fallback (data will not persist on Vercel)');
+  }
   await client.batch([
     `CREATE TABLE IF NOT EXISTS notes (
       id TEXT PRIMARY KEY,

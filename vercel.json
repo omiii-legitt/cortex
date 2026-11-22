@@ -8,6 +8,7 @@
   "routes": [
     { "src": "/api/mcp", "dest": "/src/api/mcp.ts" },
     { "src": "/api/chat", "dest": "/src/api/chat.ts" },
-    { "src": "/", "dest": "/src/api/index.ts" }
+    { "src": "/", "dest": "/src/api/index.ts" },
+    { "src": "/(.*)", "dest": "/src/api/index.ts", "status": 404 }
   ]
 }

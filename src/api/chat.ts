@@ -69,6 +69,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: 'Too many requests. Please wait a minute.' });
   }
 
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('[chat] GEMINI_API_KEY is not set');
+    return res.status(503).json({ error: 'Chat service is not configured' });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -83,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (typeof message !== 'string' || message.length > 2000) return res.status(400).json({ error: 'message must be a string of at most 2000 characters' });
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { timeout: 55000 } });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { timeout: 55000 } });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const interactions = (ai as any).interactions;
 
