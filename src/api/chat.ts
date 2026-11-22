@@ -86,7 +86,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const user = await getUserFromRequest(req);
-    const userId = user?.id ?? "system";
+    let userId: string;
+    if (user) {
+      userId = user.id;
+    } else {
+      const anonHeader = req.headers["x-anon-session"] as string | undefined;
+      if (anonHeader && /^anon_[0-9a-f-]{36}$/.test(anonHeader)) {
+        userId = anonHeader;
+      } else {
+        return res.status(400).json({ error: "Anonymous sessions require X-Anon-Session header" });
+      }
+    }
 
     const { message, previousInteractionId } = req.body as {
       message: string;

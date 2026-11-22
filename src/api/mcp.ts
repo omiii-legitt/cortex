@@ -5,7 +5,7 @@ import { createServer } from "../server.js";
 import { checkRateLimit } from "../rate-limit.js";
 import { initAuthDb, getUserFromMcpToken } from "../auth-db.js";
 
-async function resolveUserId(req: IncomingMessage): Promise<string> {
+async function resolveUserId(req: IncomingMessage): Promise<string | null> {
   const auth = req.headers["authorization"];
   if (auth && auth.startsWith("Bearer ")) {
     const token = auth.slice(7).trim();
@@ -15,11 +15,11 @@ async function resolveUserId(req: IncomingMessage): Promise<string> {
         const user = await getUserFromMcpToken(token);
         if (user) return user.id;
       } catch {
-        // fall through to 'system'
+        return null;
       }
     }
   }
-  return "system";
+  return null;
 }
 
 export default async function nodeHandler(
@@ -73,8 +73,15 @@ export default async function nodeHandler(
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
 
-  // Resolve user from Bearer token (falls back to 'system' if no valid token)
+  // Resolve user from Bearer token — return 401 if missing or invalid
   const userId = await resolveUserId(req);
+  if (userId === null) {
+    res.statusCode = 401;
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("WWW-Authenticate", 'Bearer realm="Cortex MCP"');
+    res.end(JSON.stringify({ error: "Unauthorized. Provide a valid Bearer token. Get your token from https://personal-mcp-server-taupe.vercel.app/dashboard" }));
+    return;
+  }
 
   // Create a per-request MCP handler scoped to this user
   const handler = createMcpHandler(

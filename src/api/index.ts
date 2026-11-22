@@ -457,6 +457,21 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return div;
       }
 
+      // Anon session management
+      var ANON_ID_KEY = 'cortex_anon_id';
+      var ANON_TS_KEY = 'cortex_anon_ts';
+      var ONE_HOUR = 60 * 60 * 1000;
+      var anonId = (function() {
+        var id = localStorage.getItem(ANON_ID_KEY);
+        var ts = parseInt(localStorage.getItem(ANON_TS_KEY) || '0', 10);
+        if (!id || !ts || (Date.now() - ts) > ONE_HOUR) {
+          id = 'anon_' + crypto.randomUUID();
+          localStorage.setItem(ANON_ID_KEY, id);
+          localStorage.setItem(ANON_TS_KEY, String(Date.now()));
+        }
+        return id;
+      })();
+
       async function send(msg) {
         msg = (msg || '').trim();
         if (!msg) return;
@@ -471,7 +486,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         try {
           var res = await fetch('/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Anon-Session': anonId },
             body: JSON.stringify({ message: msg, previousInteractionId: prevId })
           });
           var data = await res.json();
