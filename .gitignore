@@ -7,3 +7,17 @@ build/
 .vercel/
 
 .vercel
+
+# Data backups
+*-backup.json
+system-data-backup.json
+
+# Secret env files
+.env.production
+.env.local
+.env.development
+.env.test
+
+# Agent and IDE settings that may contain secrets
+.agents/
+.kiro/settings/mcp.json

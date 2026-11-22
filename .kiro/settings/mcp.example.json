@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "cortex": {
+      "command": "node",
+      "args": ["/absolute/path/to/cortex/build/index.js"],
+      "env": {
+        "DATA_DIR": "/path/to/data/dir",
+        "STDIO_USER_ID": "local"
+      }
+    }
+  }
+}
