@@ -51,6 +51,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       border: 1px solid #333333;
     }
     .btn-outline:hover { border-color: #00ff88; color: #00ff88; }
+    .btn-primary-hero {
+      background: #00ff88; color: #000000;
+      border: 1px solid #00ff88; font-weight: 700;
+    }
+    .btn-primary-hero:hover { opacity: 0.85; }
 
     /* Sections */
     .section { margin-bottom: 64px; }
@@ -246,10 +251,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       <p class="subtitle">A tool provider for AI clients. Connect once, use everywhere.</p>
       <span class="badge">&#9679; LIVE</span>
       <div class="hero-actions">
-        <a href="#chat" class="btn btn-outline">Try the chat &#8595;</a>
+        <a href="/api/auth/login" class="btn btn-primary-hero">&#11043; Sign in with GitHub</a>
+        <a href="#chat" class="btn btn-outline">Try the demo &#8595;</a>
         <a href="https://github.com/omiii-legitt/personal-mcp-server" target="_blank" rel="noopener" class="btn btn-outline">GitHub &#8599;</a>
         <button class="btn btn-outline" id="copyConfig">Copy MCP config</button>
-        <a href="/api/auth/login" class="btn btn-outline">&#11043; Sign in with GitHub</a>
       </div>
     </header>
 
@@ -316,22 +321,20 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     <section class="section">
       <h2 class="section-heading">Connect</h2>
-      <p class="section-text">Add the config below to your AI client, then restart it. All clients use the same JSON — just place the file in the right location.</p>
+      <p class="section-text"><a href="/api/auth/login" style="color:#00ff88;text-decoration:none">Sign in with GitHub</a> first to get your personal bearer token from the dashboard. Then add the config below (with your token) to your AI client and restart it. Without a token the server still works but all data goes into a shared anonymous bucket.</p>
 
       <div style="display:flex;flex-direction:column;gap:20px">
 
         <div class="code-block">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div>
-              <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Kiro</span>
-              <span style="color:#a0a0a0;font-size:0.78rem;margin-left:12px">~/.kiro/settings/mcp.json</span>
-            </div>
+            <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Kiro</span>
             <button class="btn btn-outline" style="font-size:0.75rem;padding:4px 12px" data-copy-btn>Copy</button>
           </div>
           <pre style="margin:0;white-space:pre">{
   "mcpServers": {
     "personal-assistant": {
-      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
+      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",
+      "headers": { "Authorization": "Bearer YOUR_TOKEN" }
     }
   }
 }</pre>
@@ -339,16 +342,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
         <div class="code-block">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div>
-              <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Claude Desktop</span>
-              <span style="color:#a0a0a0;font-size:0.78rem;margin-left:12px">~/Library/Application Support/Claude/claude_desktop_config.json &middot; %APPDATA%\Claude\claude_desktop_config.json</span>
-            </div>
+            <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Claude Desktop</span>
             <button class="btn btn-outline" style="font-size:0.75rem;padding:4px 12px" data-copy-btn>Copy</button>
           </div>
           <pre style="margin:0;white-space:pre">{
   "mcpServers": {
     "personal-assistant": {
-      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
+      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",
+      "headers": { "Authorization": "Bearer YOUR_TOKEN" }
     }
   }
 }</pre>
@@ -356,16 +357,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
         <div class="code-block">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div>
-              <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Cursor</span>
-              <span style="color:#a0a0a0;font-size:0.78rem;margin-left:12px">.cursor/mcp.json (project root)</span>
-            </div>
+            <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Cursor</span>
             <button class="btn btn-outline" style="font-size:0.75rem;padding:4px 12px" data-copy-btn>Copy</button>
           </div>
           <pre style="margin:0;white-space:pre">{
   "mcpServers": {
     "personal-assistant": {
-      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
+      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",
+      "headers": { "Authorization": "Bearer YOUR_TOKEN" }
     }
   }
 }</pre>
@@ -373,16 +372,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
         <div class="code-block">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div>
-              <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Windsurf</span>
-              <span style="color:#a0a0a0;font-size:0.78rem;margin-left:12px">~/.codeium/windsurf/mcp_config.json</span>
-            </div>
+            <span style="color:#00ff88;font-weight:700;font-size:0.82rem">Windsurf</span>
             <button class="btn btn-outline" style="font-size:0.75rem;padding:4px 12px" data-copy-btn>Copy</button>
           </div>
           <pre style="margin:0;white-space:pre">{
   "mcpServers": {
     "personal-assistant": {
-      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
+      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",
+      "headers": { "Authorization": "Bearer YOUR_TOKEN" }
     }
   }
 }</pre>
@@ -393,7 +390,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     <section class="section" id="chat">
       <h2 class="section-heading">Try it live</h2>
-      <p class="section-text" style="margin-bottom:16px">Powered by Gemini &middot; Data stored in Turso</p>
+      <p class="section-text" style="margin-bottom:16px">Powered by Gemini &middot; Demo mode — data is shared and not private. <a href="/api/auth/login" style="color:#00ff88;text-decoration:none">Sign in</a> to use your own private data.</p>
       <div class="chat-wrapper">
         <div class="chat-box" id="chatBox"></div>
         <div class="chips" id="chips">
