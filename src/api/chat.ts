@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
+// NOTE: rate limit state is in-memory and resets on each Vercel cold start.
+import { checkRateLimit } from '../rate-limit.js';
 import {
   initDb,
   createNote,
@@ -58,6 +60,15 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+
+  const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ?? 'unknown';
+  if (!checkRateLimit(ip, 20, 60_000)) {
+    return res.status(429).json({ error: 'Too many requests. Please wait a minute.' });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
