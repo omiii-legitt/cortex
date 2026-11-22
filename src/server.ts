@@ -32,7 +32,7 @@ async function wrap<T>(fn: () => Promise<T>) {
 export async function createServer(userId: string = "system"): Promise<McpServer> {
   await initDb();
   const server = new McpServer(
-    { name: "personal-assistant", version: "1.0.0" },
+    { name: "cortex", version: "1.0.0" },
     { capabilities: { tools: {} } }
   );
 
@@ -145,6 +145,6 @@ export async function createServer(userId: string = "system"): Promise<McpServer
     (args) => wrap(() => handleSetContext(userId, args))
   );
 
-  console.error("[personal-assistant] MCP server ready");
+  console.error("[cortex] MCP server ready");
   return server;
 }

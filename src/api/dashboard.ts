@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard &mdash; Personal MCP Server</title>
+  <title>Cortex &mdash; Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -191,7 +191,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 <body>
   <div class="container">
     <nav class="topbar">
-      <a href="/" class="topbar-brand">Personal MCP Server</a>
+      <a href="/" class="topbar-brand">Cortex</a>
       <div class="topbar-user">
         <img class="user-avatar" id="userAvatar" src="" alt="avatar" style="display:none" />
         <span class="user-name" id="userName"></span>
@@ -490,7 +490,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         copyBtn.style.display = 'inline-block';
 
-        var config = '{\n  "mcpServers": {\n    "personal-assistant": {\n      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",\n      "headers": {\n        "Authorization": "Bearer ' + token + '"\n      }\n    }\n  }\n}';
+        var config = '{\n  "mcpServers": {\n    "cortex": {\n      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",\n      "headers": {\n        "Authorization": "Bearer ' + token + '"\n      }\n    }\n  }\n}';
         configBlock.textContent = config;
         configDiv.style.display = 'block';
       }

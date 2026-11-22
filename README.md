@@ -1,6 +1,6 @@
-# Personal MCP Server
+# Cortex
 
-A personal MCP (Model Context Protocol) server that exposes tools for notes, tasks, and personal context. AI clients connect to this server and use the tools to interact with your data. This server does not host an AI or provide a chat interface — it is a tool provider.
+Cortex is a personal knowledge and productivity layer for AI clients. Connect your AI tools once and let them manage your notes, tasks, and personal context — all in one place.
 
 **Live deployment:** `https://personal-mcp-server-taupe.vercel.app/api/mcp`
 
@@ -21,7 +21,7 @@ Add this to your MCP client configuration:
 ```json
 {
   "mcpServers": {
-    "personal-assistant": {
+    "cortex": {
       "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"
     }
   }

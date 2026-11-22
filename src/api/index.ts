@@ -6,7 +6,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Personal MCP Server</title>
+  <title>Cortex</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -247,8 +247,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   <div class="container">
 
     <header class="hero">
-      <h1>Personal MCP Server</h1>
-      <p class="subtitle">A tool provider for AI clients. Connect once, use everywhere.</p>
+      <h1>Cortex</h1>
+      <p class="subtitle">Your personal knowledge layer for AI. Connect once, remember everything.</p>
       <span class="badge">&#9679; LIVE</span>
       <div class="hero-actions">
         <a href="/api/auth/login" class="btn btn-primary-hero">&#11043; Sign in with GitHub</a>
@@ -332,7 +332,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
           </div>
           <pre style="margin:0;white-space:pre">{
   "mcpServers": {
-    "personal-assistant": {
+    "cortex": {
       "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",
       "headers": { "Authorization": "Bearer YOUR_TOKEN" }
     }
@@ -347,7 +347,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
           </div>
           <pre style="margin:0;white-space:pre">{
   "mcpServers": {
-    "personal-assistant": {
+    "cortex": {
       "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",
       "headers": { "Authorization": "Bearer YOUR_TOKEN" }
     }
@@ -362,7 +362,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
           </div>
           <pre style="margin:0;white-space:pre">{
   "mcpServers": {
-    "personal-assistant": {
+    "cortex": {
       "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",
       "headers": { "Authorization": "Bearer YOUR_TOKEN" }
     }
@@ -377,7 +377,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
           </div>
           <pre style="margin:0;white-space:pre">{
   "mcpServers": {
-    "personal-assistant": {
+    "cortex": {
       "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",
       "headers": { "Authorization": "Bearer YOUR_TOKEN" }
     }
@@ -424,7 +424,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       var btn = document.getElementById('chatSend');
       var chipsEl = document.getElementById('chips');
 
-      var MCP_CONFIG = '{\\n  "mcpServers": {\\n    "personal-assistant": {\\n      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"\\n    }\\n  }\\n}';
+      var MCP_CONFIG = '{\\n  "mcpServers": {\\n    "cortex": {\\n      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp"\\n    }\\n  }\\n}';
 
       function setupCopyBtn(el, originalLabel) {
         el.addEventListener('click', function () {

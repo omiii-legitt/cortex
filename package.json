@@ -1,6 +1,7 @@
 {
-  "name": "personal-mcp-server",
+  "name": "cortex-mcp",
   "version": "1.0.0",
+  "description": "Personal knowledge layer for AI clients",
   "type": "module",
   "scripts": {
     "build": "tsc",
