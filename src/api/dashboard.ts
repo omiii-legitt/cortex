@@ -167,6 +167,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     /* Loading */
     .loading { color: #444; font-size: 0.85rem; padding: 16px 0; }
 
+    /* Code block */
+    .code-block {
+      background: #0a0a0a;
+      border: 1px solid #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #ffffff;
+      font-family: inherit;
+    }
+
     /* Responsive */
     @media (max-width: 600px) {
       .topbar { flex-direction: column; align-items: flex-start; }
@@ -251,6 +264,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             <button class="btn btn-primary btn-sm" id="addCtxBtn">Set</button>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- MCP Token -->
+    <section class="section">
+      <h2 class="section-heading">MCP Token</h2>
+      <p style="color:#a0a0a0;font-size:0.85rem;margin-bottom:16px;line-height:1.6">
+        Use this bearer token so AI clients (Kiro, Claude Desktop, Cursor, Windsurf) connect to your personal data.
+        Add it to your MCP config as shown below. Keep it secret &mdash; anyone with this token can read and write your data.
+      </p>
+      <div id="tokenArea" style="margin-bottom:16px">
+        <p class="loading">Loading&hellip;</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" id="generateTokenBtn">Generate token</button>
+        <button class="btn btn-outline btn-sm" id="copyTokenBtn" style="display:none">Copy token</button>
+      </div>
+      <div id="tokenConfig" style="display:none;margin-top:20px">
+        <p style="color:#a0a0a0;font-size:0.78rem;margin-bottom:8px">MCP config with your token:</p>
+        <pre id="tokenConfigBlock" class="code-block" style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:16px;font-size:0.78rem;overflow-x:auto;white-space:pre"></pre>
+        <button class="btn btn-outline btn-sm" id="copyConfigBtn" style="margin-top:8px">Copy config</button>
       </div>
     </section>
   </div>
@@ -414,6 +448,91 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             loadData();
           })
           .catch(function () { alert('Failed to set context'); })
+          .finally(function () { btn.disabled = false; });
+      });
+
+      // ---- MCP Token ----
+      var currentToken = null;
+
+      function renderToken(token) {
+        currentToken = token;
+        var area = document.getElementById('tokenArea');
+        var copyBtn = document.getElementById('copyTokenBtn');
+        var configDiv = document.getElementById('tokenConfig');
+        var configBlock = document.getElementById('tokenConfigBlock');
+
+        if (!token) {
+          area.innerHTML = '<p style="color:#444;font-size:0.85rem">No token yet. Click Generate to create one.</p>';
+          copyBtn.style.display = 'none';
+          configDiv.style.display = 'none';
+          return;
+        }
+
+        // Show token masked with reveal toggle
+        area.innerHTML =
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+          '<code id="tokenDisplay" style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:8px 14px;font-size:0.82rem;color:#00ff88;letter-spacing:0.04em;word-break:break-all">' +
+          escHtml(token.slice(0, 8)) + '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;' +
+          '</code>' +
+          '<button class="btn btn-outline btn-sm" id="revealBtn">Reveal</button>' +
+          '</div>';
+
+        document.getElementById('revealBtn').addEventListener('click', function () {
+          var display = document.getElementById('tokenDisplay');
+          if (this.textContent === 'Reveal') {
+            display.textContent = token;
+            this.textContent = 'Hide';
+          } else {
+            display.innerHTML = escHtml(token.slice(0, 8)) + '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;';
+            this.textContent = 'Reveal';
+          }
+        });
+
+        copyBtn.style.display = 'inline-block';
+
+        var config = '{\n  "mcpServers": {\n    "personal-assistant": {\n      "url": "https://personal-mcp-server-taupe.vercel.app/api/mcp",\n      "headers": {\n        "Authorization": "Bearer ' + token + '"\n      }\n    }\n  }\n}';
+        configBlock.textContent = config;
+        configDiv.style.display = 'block';
+      }
+
+      fetch('/api/auth/token')
+        .then(function (r) { return r.json(); })
+        .then(function (d) { renderToken(d.token); })
+        .catch(function () {
+          document.getElementById('tokenArea').innerHTML = '<p style="color:#ff6b6b;font-size:0.85rem">Failed to load token.</p>';
+        });
+
+      document.getElementById('copyTokenBtn').addEventListener('click', function () {
+        if (!currentToken) return;
+        var btn = this;
+        navigator.clipboard.writeText(currentToken).then(function () {
+          btn.textContent = '\u2713 Copied!';
+          btn.style.color = '#00ff88';
+          setTimeout(function () { btn.textContent = 'Copy token'; btn.style.color = ''; }, 2000);
+        });
+      });
+
+      document.getElementById('copyConfigBtn').addEventListener('click', function () {
+        var text = document.getElementById('tokenConfigBlock').textContent;
+        var btn = this;
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = '\u2713 Copied!';
+          btn.style.color = '#00ff88';
+          setTimeout(function () { btn.textContent = 'Copy config'; btn.style.color = ''; }, 2000);
+        });
+      });
+
+      document.getElementById('generateTokenBtn').addEventListener('click', function () {
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Generating\u2026';
+        fetch('/api/auth/token', { method: 'POST' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            renderToken(d.token);
+            btn.textContent = 'Regenerate token';
+          })
+          .catch(function () { alert('Failed to generate token'); })
           .finally(function () { btn.disabled = false; });
       });
     })();

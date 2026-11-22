@@ -3,11 +3,24 @@ import type { IncomingMessage, ServerResponse } from "http";
 import { createServer } from "../server.js";
 // NOTE: rate limit state is in-memory and resets on each Vercel cold start.
 import { checkRateLimit } from "../rate-limit.js";
+import { initAuthDb, getUserFromMcpToken } from "../auth-db.js";
 
-const handler = createMcpHandler(
-  (_ctx) => createServer(),
-  { legacy: "stateless" }
-);
+async function resolveUserId(req: IncomingMessage): Promise<string> {
+  const auth = req.headers["authorization"];
+  if (auth && auth.startsWith("Bearer ")) {
+    const token = auth.slice(7).trim();
+    if (token) {
+      try {
+        await initAuthDb();
+        const user = await getUserFromMcpToken(token);
+        if (user) return user.id;
+      } catch {
+        // fall through to 'system'
+      }
+    }
+  }
+  return "system";
+}
 
 export default async function nodeHandler(
   req: IncomingMessage,
@@ -24,37 +37,50 @@ export default async function nodeHandler(
   const totalBytes = bodyChunks.reduce((sum, c) => sum + c.length, 0);
   if (totalBytes > 1_048_576) {
     res.statusCode = 413;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Request too large' }));
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ error: "Request too large" }));
     return;
   }
 
   const bodyText = Buffer.concat(bodyChunks).toString("utf-8");
 
-  const ip = (Array.isArray(req.headers['x-forwarded-for'])
-    ? req.headers['x-forwarded-for'][0]
-    : req.headers['x-forwarded-for'])?.split(',')[0]?.trim() ?? 'unknown';
+  const ip =
+    (Array.isArray(req.headers["x-forwarded-for"])
+      ? req.headers["x-forwarded-for"][0]
+      : req.headers["x-forwarded-for"])
+      ?.split(",")[0]
+      ?.trim() ?? "unknown";
   if (!checkRateLimit(ip, 60, 60_000)) {
     res.statusCode = 429;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Too many requests. Please wait a minute.' }));
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ error: "Too many requests. Please wait a minute." }));
     return;
   }
 
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
-    res.setHeader('Access-Control-Max-Age', '86400');
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
+    res.setHeader("Access-Control-Max-Age", "86400");
     res.statusCode = 204;
     res.end();
     return;
   }
+
   // Ensure CORS headers on actual requests
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
+
+  // Resolve user from Bearer token (falls back to 'system' if no valid token)
+  const userId = await resolveUserId(req);
+
+  // Create a per-request MCP handler scoped to this user
+  const handler = createMcpHandler(
+    (_ctx) => createServer(userId),
+    { legacy: "stateless" }
+  );
 
   // Build a web-standard Request from the Node IncomingMessage
   const url = `https://${req.headers.host ?? "localhost"}${req.url ?? "/"}`;
@@ -77,8 +103,8 @@ export default async function nodeHandler(
   const webRes = await handler.fetch(webReq);
 
   res.statusCode = webRes.status;
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
   webRes.headers.forEach((value, key) => {
     res.setHeader(key, value);
   });

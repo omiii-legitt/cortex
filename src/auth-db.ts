@@ -33,7 +33,62 @@ export async function initAuthDb(): Promise<void> {
       created_at TEXT NOT NULL,
       expires_at TEXT NOT NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS mcp_tokens (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL
+    )`,
   ]);
+}
+
+// ---------------------------------------------------------------------------
+// MCP bearer tokens
+// ---------------------------------------------------------------------------
+
+export async function createMcpToken(userId: string): Promise<string> {
+  const client = getAuthClient();
+  // Delete any existing token for this user first (one token per user)
+  await client.execute({
+    sql: "DELETE FROM mcp_tokens WHERE user_id = ?",
+    args: [userId],
+  });
+  const token = `mcp_${crypto.randomUUID().replace(/-/g, "")}`;
+  const now = new Date().toISOString();
+  await client.execute({
+    sql: "INSERT INTO mcp_tokens (token, user_id, created_at) VALUES (?, ?, ?)",
+    args: [token, userId, now],
+  });
+  return token;
+}
+
+export async function getMcpToken(userId: string): Promise<string | null> {
+  const client = getAuthClient();
+  const r = await client.execute({
+    sql: "SELECT token FROM mcp_tokens WHERE user_id = ?",
+    args: [userId],
+  });
+  if (r.rows.length === 0) return null;
+  return (r.rows[0] as Record<string, unknown>).token as string;
+}
+
+export async function getUserFromMcpToken(token: string): Promise<User | null> {
+  const client = getAuthClient();
+  const r = await client.execute({
+    sql: `SELECT u.id, u.github_id, u.username, u.email, u.avatar_url, u.created_at
+          FROM mcp_tokens t JOIN users u ON t.user_id = u.id
+          WHERE t.token = ?`,
+    args: [token],
+  });
+  if (r.rows.length === 0) return null;
+  const row = r.rows[0] as Record<string, unknown>;
+  return {
+    id: row.id as string,
+    github_id: row.github_id as string,
+    username: row.username as string,
+    email: (row.email as string | null) ?? null,
+    avatar_url: (row.avatar_url as string | null) ?? null,
+    created_at: row.created_at as string,
+  };
 }
 
 export async function findOrCreateUser(
