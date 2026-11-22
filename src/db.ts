@@ -5,7 +5,19 @@ const authToken = process.env.TURSO_AUTH_TOKEN;
 
 const client = createClient(authToken ? { url, authToken } : { url });
 
+// Run initDb only once per cold start
+let dbInitialized = false;
+let dbInitPromise: Promise<void> | null = null;
+
 export async function initDb() {
+  if (dbInitialized) return;
+  if (dbInitPromise) return dbInitPromise;
+  dbInitPromise = _initDb();
+  await dbInitPromise;
+  dbInitialized = true;
+}
+
+async function _initDb() {
   if (!process.env.TURSO_DATABASE_URL) {
     console.warn(
       "[db] TURSO_DATABASE_URL is not set — using local SQLite fallback (data will not persist on Vercel)"
