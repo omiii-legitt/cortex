@@ -16,6 +16,9 @@ import {
 } from "../db.js";
 import { getUserFromRequest } from "../auth.js";
 
+// Initialize DB at module load (cold start) rather than per-request
+const dbReady = initDb();
+
 const MODEL = "gemini-3.5-flash-lite";
 
 const SYSTEM_INSTRUCTION =
@@ -39,7 +42,7 @@ async function executeTool(
   args: Record<string, unknown>,
   userId: string
 ): Promise<unknown> {
-  await initDb();
+  await dbReady;
   switch (name) {
     case "create_note":
       return createNote(userId, args.title as string, args.content as string, (args.tags as string[] | undefined) ?? []);

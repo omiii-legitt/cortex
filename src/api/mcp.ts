@@ -5,13 +5,16 @@ import { createServer } from "../server.js";
 import { checkRateLimit } from "../rate-limit.js";
 import { initAuthDb, getUserFromMcpToken } from "../auth-db.js";
 
+// Initialize auth DB at module load (cold start) rather than per-request
+const authDbReady = initAuthDb();
+
 async function resolveUserId(req: IncomingMessage): Promise<string | null> {
   const auth = req.headers["authorization"];
   if (auth && auth.startsWith("Bearer ")) {
     const token = auth.slice(7).trim();
     if (token) {
       try {
-        await initAuthDb();
+        await authDbReady;
         const user = await getUserFromMcpToken(token);
         if (user) return user.id;
       } catch {

@@ -2,6 +2,9 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getUserFromRequest } from "../../auth.js";
 import { initDb, getAllNotes, listTasks, getAllContext } from "../../db.js";
 
+// Initialize DB at module load (cold start) rather than per-request
+const dbReady = initDb();
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("X-Content-Type-Options", "nosniff");
 
@@ -11,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const userId = user.id;
-  await initDb();
+  await dbReady;
 
   const [notes, tasks, context] = await Promise.all([
     getAllNotes(userId),
