@@ -18,6 +18,15 @@ export default async function nodeHandler(
     req.on("end", resolve);
     req.on("error", reject);
   });
+
+  const totalBytes = bodyChunks.reduce((sum, c) => sum + c.length, 0);
+  if (totalBytes > 1_048_576) {
+    res.statusCode = 413;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Request too large' }));
+    return;
+  }
+
   const bodyText = Buffer.concat(bodyChunks).toString("utf-8");
 
   // Build a web-standard Request from the Node IncomingMessage

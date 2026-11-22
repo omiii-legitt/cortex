@@ -39,9 +39,9 @@ export async function createServer(): Promise<McpServer> {
     {
       description: "Create a new note with a title, content, and optional tags",
       inputSchema: {
-        title: z.string(),
-        content: z.string(),
-        tags: z.array(z.string()).optional(),
+        title: z.string().min(1).max(500),
+        content: z.string().max(50000),
+        tags: z.array(z.string().max(100)).max(20).optional(),
       },
     },
     (args) => wrap(() => handleCreateNote(args))
@@ -51,7 +51,7 @@ export async function createServer(): Promise<McpServer> {
     "get_note",
     {
       description: "Retrieve a note by its ID",
-      inputSchema: { id: z.string() },
+      inputSchema: { id: z.string().uuid() },
     },
     (args) => wrap(() => handleGetNote(args))
   );
@@ -61,10 +61,10 @@ export async function createServer(): Promise<McpServer> {
     {
       description: "Update the title, content, or tags of an existing note",
       inputSchema: {
-        id: z.string(),
-        title: z.string().optional(),
-        content: z.string().optional(),
-        tags: z.array(z.string()).optional(),
+        id: z.string().uuid(),
+        title: z.string().min(1).max(500).optional(),
+        content: z.string().max(50000).optional(),
+        tags: z.array(z.string().max(100)).max(20).optional(),
       },
     },
     (args) => wrap(() => handleUpdateNote(args))
@@ -75,8 +75,8 @@ export async function createServer(): Promise<McpServer> {
     {
       description: "Full-text search notes by title and content",
       inputSchema: {
-        query: z.string(),
-        limit: z.number().int().positive().optional().default(10),
+        query: z.string().min(1).max(500),
+        limit: z.number().int().min(1).max(100).optional().default(10),
       },
     },
     (args) => wrap(() => handleSearchNotes(args))
@@ -87,9 +87,9 @@ export async function createServer(): Promise<McpServer> {
     {
       description: "Create a new task with optional details and due date",
       inputSchema: {
-        title: z.string(),
-        details: z.string().optional(),
-        due_date: z.string().optional(),
+        title: z.string().min(1).max(500),
+        details: z.string().max(10000).optional(),
+        due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
       },
     },
     (args) => wrap(() => handleCreateTask(args))
@@ -101,7 +101,7 @@ export async function createServer(): Promise<McpServer> {
       description: "List tasks, optionally filtered by status (open, in_progress, done)",
       inputSchema: {
         status: z.enum(["open", "in_progress", "done"]).optional(),
-        limit: z.number().int().positive().optional().default(20),
+        limit: z.number().int().min(1).max(100).optional().default(20),
       },
     },
     (args) => wrap(() => handleListTasks(args))
@@ -112,10 +112,10 @@ export async function createServer(): Promise<McpServer> {
     {
       description: "Update an existing task's title, details, due date, or status",
       inputSchema: {
-        id: z.string(),
-        title: z.string().optional(),
-        details: z.string().optional(),
-        due_date: z.string().optional(),
+        id: z.string().uuid(),
+        title: z.string().min(1).max(500).optional(),
+        details: z.string().max(10000).optional(),
+        due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         status: z.enum(["open", "in_progress", "done"]).optional(),
       },
     },
@@ -136,8 +136,8 @@ export async function createServer(): Promise<McpServer> {
     {
       description: "Set a personal context key/value pair for the AI to reference",
       inputSchema: {
-        key: z.string(),
-        value: z.string(),
+        key: z.string().min(1).max(200),
+        value: z.string().max(10000),
       },
     },
     (args) => wrap(() => handleSetContext(args))

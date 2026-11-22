@@ -70,6 +70,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!message) return res.status(400).json({ error: 'message is required' });
 
+    if (typeof message !== 'string' || message.length > 2000) return res.status(400).json({ error: 'message must be a string of at most 2000 characters' });
+
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { timeout: 55000 } });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const interactions = (ai as any).interactions;
@@ -118,7 +120,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ reply, interactionId: interaction.id });
   } catch (err) {
     console.error('[chat]', err);
-    const msg = err instanceof Error ? err.message : 'Internal server error';
-    return res.status(500).json({ error: msg });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
