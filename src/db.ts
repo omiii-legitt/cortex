@@ -12,9 +12,11 @@ let dbInitPromise: Promise<void> | null = null;
 export async function initDb() {
   if (dbInitialized) return;
   if (dbInitPromise) return dbInitPromise;
-  dbInitPromise = _initDb();
-  await dbInitPromise;
-  dbInitialized = true;
+  dbInitPromise = _initDb().then(
+    () => { dbInitialized = true; },
+    (err) => { dbInitPromise = null; throw err; } // reset on failure so next request retries
+  );
+  return dbInitPromise;
 }
 
 async function _initDb() {

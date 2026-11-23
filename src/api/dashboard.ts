@@ -292,7 +292,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   <script>
     (function () {
       // Load user info
-      fetch('/api/auth/me')
+      fetch('/api/auth/me', { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (!data.user) { window.location.href = '/api/auth/login'; return; }
@@ -371,9 +371,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       function loadData() {
-        fetch('/api/dashboard/data')
+        fetch('/api/dashboard/data', { credentials: 'same-origin' })
           .then(function (r) {
             if (r.status === 401) { window.location.href = '/api/auth/login'; throw new Error('unauth'); }
+            if (!r.ok) return r.json().then(function (e) { throw new Error(e.error || 'Failed to load'); });
             return r.json();
           })
           .then(function (data) {
@@ -382,22 +383,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             renderContext(data.context);
           })
           .catch(function (e) {
-            if (e.message !== 'unauth') {
-              document.getElementById('notesGrid').innerHTML = '<p class="empty">Failed to load data.</p>';
-              document.getElementById('tasksGrid').innerHTML = '';
-              document.getElementById('contextArea').innerHTML = '';
-            }
+            if (e.message === 'unauth') return;
+            var msg = '<p class="empty" style="color:#ff6b6b">⚠ ' + escHtml(e.message) + '</p>';
+            document.getElementById('notesGrid').innerHTML = msg;
+            document.getElementById('tasksGrid').innerHTML = msg;
+            document.getElementById('contextArea').innerHTML = msg;
           });
       }
 
       loadData();
 
       function chatAction(prompt) {
+        // Dashboard users are authenticated via session cookie — no anon header needed
         return fetch('/api/chat', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: prompt }),
-        }).then(function (r) { return r.json(); });
+        }).then(function (r) {
+          if (!r.ok) return r.json().then(function (e) { throw new Error(e.error || 'Chat error'); });
+          return r.json();
+        });
       }
 
       document.getElementById('addNoteBtn').addEventListener('click', function () {
@@ -495,11 +501,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         configDiv.style.display = 'block';
       }
 
-      fetch('/api/auth/token')
-        .then(function (r) { return r.json(); })
+      fetch('/api/auth/token', { credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('Status ' + r.status);
+          return r.json();
+        })
         .then(function (d) { renderToken(d.token); })
-        .catch(function () {
-          document.getElementById('tokenArea').innerHTML = '<p style="color:#ff6b6b;font-size:0.85rem">Failed to load token.</p>';
+        .catch(function (e) {
+          document.getElementById('tokenArea').innerHTML = '<p style="color:#ff6b6b;font-size:0.85rem">⚠ Failed to load token (' + escHtml(e.message) + '). Try refreshing.</p>';
         });
 
       document.getElementById('copyTokenBtn').addEventListener('click', function () {
@@ -526,13 +535,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         var btn = this;
         btn.disabled = true;
         btn.textContent = 'Generating\u2026';
-        fetch('/api/auth/token', { method: 'POST' })
-          .then(function (r) { return r.json(); })
+        fetch('/api/auth/token', { method: 'POST', credentials: 'same-origin' })
+          .then(function (r) {
+            if (!r.ok) return r.json().then(function (e) { throw new Error(e.error || 'Status ' + r.status); });
+            return r.json();
+          })
           .then(function (d) {
+            if (!d.token) throw new Error('No token returned');
             renderToken(d.token);
             btn.textContent = 'Regenerate token';
           })
-          .catch(function () { alert('Failed to generate token'); })
+          .catch(function (e) {
+            document.getElementById('tokenArea').innerHTML = '<p style="color:#ff6b6b;font-size:0.85rem">\u26a0 Failed to generate token: ' + escHtml(e.message) + '</p>';
+            btn.textContent = 'Generate token';
+          })
           .finally(function () { btn.disabled = false; });
       });
     })();

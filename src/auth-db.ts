@@ -22,7 +22,10 @@ let authDbInitPromise: Promise<void> | null = null;
 export async function initAuthDb(): Promise<void> {
   if (authDbInitialized) return;
   if (authDbInitPromise) return authDbInitPromise;
-  authDbInitPromise = _initAuthDb().then(() => { authDbInitialized = true; });
+  authDbInitPromise = _initAuthDb().then(
+    () => { authDbInitialized = true; },
+    (err) => { authDbInitPromise = null; throw err; } // reset on failure so next request retries
+  );
   return authDbInitPromise;
 }
 

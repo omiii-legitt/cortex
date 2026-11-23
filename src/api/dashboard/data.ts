@@ -2,9 +2,6 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getUserFromRequest } from "../../auth.js";
 import { initDb, getAllNotes, listTasks, getAllContext } from "../../db.js";
 
-// Initialize DB at module load (cold start) rather than per-request
-const dbReady = initDb();
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("X-Content-Type-Options", "nosniff");
 
@@ -14,13 +11,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const userId = user.id;
-  await dbReady;
 
-  const [notes, tasks, context] = await Promise.all([
-    getAllNotes(userId),
-    listTasks(userId, undefined, 50),
-    getAllContext(userId),
-  ]);
+  try {
+    await initDb();
+  } catch (err) {
+    console.error("[dashboard/data] DB init failed:", err instanceof Error ? err.message : err);
+    return res.status(503).json({ error: "Database unavailable. Please try again." });
+  }
+
+  let notes, tasks, context;
+  try {
+    [notes, tasks, context] = await Promise.all([
+      getAllNotes(userId),
+      listTasks(userId, undefined, 50),
+      getAllContext(userId),
+    ]);
+  } catch (err) {
+    console.error("[dashboard/data] Query failed:", err instanceof Error ? err.message : err);
+    return res.status(500).json({ error: "Failed to load data. Please try again." });
+  }
 
   return res.status(200).json({
     notes: notes.map((n) => ({
