@@ -1,10 +1,15 @@
 import { createClient } from "@libsql/client";
 
+// Single shared client for the auth DB — created once per cold start
+let _authClient: ReturnType<typeof createClient> | null = null;
+
 function getAuthClient() {
+  if (_authClient) return _authClient;
   const url = process.env.AUTH_DB_URL;
   const authToken = process.env.AUTH_DB_TOKEN;
   if (!url) throw new Error("AUTH_DB_URL is not set");
-  return createClient(authToken ? { url, authToken } : { url });
+  _authClient = createClient(authToken ? { url, authToken } : { url });
+  return _authClient;
 }
 
 export interface User {
