@@ -33,8 +33,10 @@ export async function getUserFromRequest(
   if (!sessionId) return null;
   try {
     await initAuthDb();
-    return getSessionUser(sessionId);
-  } catch {
+    const user = await getSessionUser(sessionId);
+    return user;
+  } catch (err) {
+    console.error("[auth] error:", err instanceof Error ? err.message : err);
     return null;
   }
 }

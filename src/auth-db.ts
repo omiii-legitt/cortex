@@ -161,11 +161,12 @@ export async function createSession(userId: string): Promise<string> {
 
 export async function getSessionUser(sessionId: string): Promise<User | null> {
   const client = getAuthClient();
+  const now = new Date().toISOString();
   const r = await client.execute({
     sql: `SELECT u.id, u.github_id, u.username, u.email, u.avatar_url, u.created_at
           FROM sessions s JOIN users u ON s.user_id = u.id
           WHERE s.id = ? AND s.expires_at > ?`,
-    args: [sessionId, new Date().toISOString()],
+    args: [sessionId, now],
   });
   if (r.rows.length === 0) return null;
   const row = r.rows[0] as Record<string, unknown>;

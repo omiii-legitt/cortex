@@ -10,7 +10,8 @@
     { "src": "src/api/auth/me.ts", "use": "@vercel/node" },
     { "src": "src/api/auth/token.ts", "use": "@vercel/node" },
     { "src": "src/api/dashboard.ts", "use": "@vercel/node" },
-    { "src": "src/api/dashboard/data.ts", "use": "@vercel/node" }
+    { "src": "src/api/dashboard/data.ts", "use": "@vercel/node" },
+    { "src": "public/dashboard.js", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/mcp", "dest": "/src/api/mcp.ts" },
@@ -22,6 +23,7 @@
     { "src": "/api/auth/token", "dest": "/src/api/auth/token.ts" },
     { "src": "/dashboard", "dest": "/src/api/dashboard.ts" },
     { "src": "/api/dashboard/data", "dest": "/src/api/dashboard/data.ts" },
+    { "src": "/public/dashboard.js", "dest": "/public/dashboard.js" },
     { "src": "/", "dest": "/src/api/index.ts" },
     { "src": "/(.*)", "dest": "/src/api/index.ts", "status": 404 }
   ]
