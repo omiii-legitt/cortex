@@ -2,9 +2,6 @@ import type { IncomingMessage } from "http";
 import type { VercelRequest } from "@vercel/node";
 import { initAuthDb, getSessionUser } from "./auth-db.js";
 
-// Initialize auth DB at module load so getUserFromRequest is fast
-const authDbReady = initAuthDb();
-
 function parseCookies(cookieHeader: string): Record<string, string> {
   const result: Record<string, string> = {};
   for (const part of cookieHeader.split(";")) {
@@ -34,6 +31,10 @@ export async function getUserFromRequest(
   const cookies = parseCookies(cookieHeader);
   const sessionId = cookies["session"];
   if (!sessionId) return null;
-  await authDbReady;
-  return getSessionUser(sessionId);
+  try {
+    await initAuthDb();
+    return getSessionUser(sessionId);
+  } catch {
+    return null;
+  }
 }

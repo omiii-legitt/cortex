@@ -2,9 +2,6 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import jwt from "jsonwebtoken";
 import { initAuthDb, findOrCreateUser, createSession } from "../../auth-db.js";
 
-// Initialize auth DB at module load
-const authDbReady = initAuthDb();
-
 function parseCookies(cookieHeader: string): Record<string, string> {
   const result: Record<string, string> = {};
   for (const part of cookieHeader.split(";")) {
@@ -109,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  await authDbReady;
+  await initAuthDb();
   const user = await findOrCreateUser(
     String(githubUser.id),
     githubUser.login,

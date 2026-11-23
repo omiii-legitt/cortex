@@ -16,7 +16,17 @@ export interface User {
   created_at: string;
 }
 
+let authDbInitialized = false;
+let authDbInitPromise: Promise<void> | null = null;
+
 export async function initAuthDb(): Promise<void> {
+  if (authDbInitialized) return;
+  if (authDbInitPromise) return authDbInitPromise;
+  authDbInitPromise = _initAuthDb().then(() => { authDbInitialized = true; });
+  return authDbInitPromise;
+}
+
+async function _initAuthDb(): Promise<void> {
   const client = getAuthClient();
   await client.batch([
     `CREATE TABLE IF NOT EXISTS users (
