@@ -17,6 +17,8 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
+      - name: Check dashboard.js syntax
+        run: node --check public/dashboard.js
       - run: npm test
         env:
           TURSO_DATABASE_URL: file:./test.db
