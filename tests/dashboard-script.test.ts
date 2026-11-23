@@ -103,4 +103,64 @@ describe('/api/auth/token', () => {
     expect(statusCode).toBe(401);
     expect((jsonBody as any).error).toBe('Unauthorized');
   });
+
+  it('POST returns 200 with a token for an authenticated user', async () => {
+    const { getUserFromRequest } = await import('../src/auth.js');
+    (getUserFromRequest as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: 'user-test-1',
+      github_id: '12345',
+      username: 'testuser',
+      email: null,
+      avatar_url: null,
+      created_at: new Date().toISOString(),
+    });
+
+    const { default: tokenHandler } = await import('../src/api/auth/token.js');
+
+    const req = { headers: { cookie: 'session=valid-session' }, method: 'POST' } as any;
+    let statusCode = 0;
+    let jsonBody: unknown = null;
+    const res = {
+      setHeader: vi.fn(),
+      status: vi.fn().mockImplementation((code: number) => { statusCode = code; return res; }),
+      json: vi.fn().mockImplementation((body: unknown) => { jsonBody = body; return res; }),
+    } as any;
+
+    await tokenHandler(req, res);
+
+    expect(statusCode).toBe(200);
+    expect(typeof (jsonBody as any).token).toBe('string');
+    expect((jsonBody as any).token).toBe('mcp_newtoken');
+  });
+
+  it('GET returns 200 with existing token for an authenticated user', async () => {
+    const { getUserFromRequest } = await import('../src/auth.js');
+    (getUserFromRequest as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: 'user-test-1',
+      github_id: '12345',
+      username: 'testuser',
+      email: null,
+      avatar_url: null,
+      created_at: new Date().toISOString(),
+    });
+
+    const { getMcpToken } = await import('../src/auth-db.js');
+    (getMcpToken as ReturnType<typeof vi.fn>).mockResolvedValueOnce('mcp_existingtoken');
+
+    const { default: tokenHandler } = await import('../src/api/auth/token.js');
+
+    const req = { headers: { cookie: 'session=valid-session' }, method: 'GET' } as any;
+    let statusCode = 0;
+    let jsonBody: unknown = null;
+    const res = {
+      setHeader: vi.fn(),
+      status: vi.fn().mockImplementation((code: number) => { statusCode = code; return res; }),
+      json: vi.fn().mockImplementation((body: unknown) => { jsonBody = body; return res; }),
+    } as any;
+
+    await tokenHandler(req, res);
+
+    expect(statusCode).toBe(200);
+    expect((jsonBody as any).token).toBe('mcp_existingtoken');
+  });
 });
